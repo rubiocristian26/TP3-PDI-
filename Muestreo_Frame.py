@@ -5,14 +5,14 @@ import matplotlib.pyplot as plt
 # Cargamos el video en la variable 'ruta'
 ruta = "ruta_1.mp4"       
 # Parámetros. 
-roi_offset = 5                          # Desplazamiento vertical para ajustar el punto superior de las lineas        
-canny_umbrales = (50, 150)              # Umbrales Inferior y Superior para el detector de bordes de Canny  
+roi_offset = 5                              # Desplazamiento vertical para ajustar el punto superior de las lineas        
+canny_umbrales = (50, 150)                  # Umbrales Inferior y Superior para el detector de bordes de Canny  
 parametros_hough = {                    
-    "rho": 1,                           # Resolución en píxeles del parámetro rho. 1 pixel de resolucion
-    "theta": np.pi / 180,               # Resolución angular en radianes.          1 radian de resolucion.
-    "threshold": 30,                    # Umbral mínimo de intersecciones para detectar una línea
-    " minLineLength": 40,                # Longitud mínima de un segmento para ser considerado línea
-    " maxLineGap": 100                   # Máxima separación permitida entre segmentos para unirlos
+    "rho": 1,                               # Resolución en píxeles del parámetro rho. 1 pixel de resolucion
+    "theta": np.pi / 180,                   # Resolución angular en radianes.          1 radian de resolucion.
+    "threshold": 30,                        # Umbral mínimo de intersecciones para detectar una línea
+    " minLineLength": 40,                   # Longitud mínima de un segmento para ser considerado línea
+    " maxLineGap": 100                      # Máxima separación permitida entre segmentos para unirlos
 }
 
 
@@ -20,13 +20,13 @@ parametros_hough = {
 
 def region_interes(img):
     ancho, alto = img.shape[:2]         # Adquirimos las dimensiones de la imagen.
-    polygons = np.array([               # Definimos la region de interes.
+    poligonos = np.array([               # Definimos la region de interes.
         [(0, ancho), (450, 320), (520, 320), (alto, ancho)]
     ])
     mask = np.zeros_like(img)           # Creamos una mascara negra
-    cv2.fillPoly(mask, polygons, 255)   # Máscara blanca de la ROI sobre fondo negro
-    mask_img = cv2.bitwise_and(img, mask)   #Aplicamos la mascara a la imagen original
-    return mask_img, mask               #Devolvemos la imagen en la region de la mascara
+    cv2.fillPoly(mask, poligonos, 255)   # Máscara blanca de la ROI sobre fondo negro
+    img_mask = cv2.bitwise_and(img, mask)   #Aplicamos la mascara a la imagen original
+    return img_mask, mask               #Devolvemos la imagen en la region de la mascara
 
 def coordenadas(imagen, parametros_linea):
     if parametros_linea is None: return None    #En caso de no detectar una linea, no devolvemos nada.
