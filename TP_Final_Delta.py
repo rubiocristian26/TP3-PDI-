@@ -6,9 +6,9 @@ VIDEO_ENTRADA = "ruta_2.mp4"      # Cambiar a "ruta_2.mp4" cuando quieras
 VIDEO_SALIDA = "resultado_carriles_final.mp4"
 
 # Parámetros de detección
-ROI_OFFSET = 5                   # Margen extra para bajar el horizonte
-UMBRALES_CANNY = (50, 150)       # Umbrales para bordes
-PARAMETROS_HOUGH = {
+roi_offset = 5                   # Margen extra para bajar el horizonte
+canny_umbrales = (50, 150)       # Umbrales para bordes
+parametros_hough = {
     "rho": 1,
     "theta": np.pi / 180,
     "threshold": 30,             # Mínimo de votos para aceptar una línea
@@ -17,9 +17,6 @@ PARAMETROS_HOUGH = {
 }
 
 def region_interes(img):
-    """
-    Define una máscara trapezoidal para enfocarse solo en la carretera.
-    """
     alto, ancho = img.shape[:2]
     
     # Definimos los vértices del trapecio
@@ -30,17 +27,16 @@ def region_interes(img):
          (ancho, alto)]                 # Esquina inferior derecha
     ])
     
-    mascara = np.zeros_like(img)
-    cv2.fillPoly(mascara, poligonos, 255)
-    imagen_enmascarada = cv2.bitwise_and(img, mascara)
-    return imagen_enmascarada
+    mask = np.zeros_like(img)
+    cv2.fillPoly(mask, poligonos, 255)
+    img_mask = cv2.bitwise_and(img, mask)
+    return img_mask
 
 def coordenadas(imagen, parametros_linea):
     """
     Convierte (pendiente, interseccion) en coordenadas (x1, y1, x2, y2).
     """
-    if parametros_linea is None:
-        return None
+    if parametros_linea is None:return None
         
     pendiente, interseccion = parametros_linea
     
@@ -48,7 +44,7 @@ def coordenadas(imagen, parametros_linea):
     y1 = imagen.shape[0] 
     
     # y2: Hasta dónde queremos que llegue la línea (el horizonte)
-    y2 = int(y1 * (6/10)) + ROI_OFFSET
+    y2 = int(y1 * (6/10)) + roi_offset
     
     # Calculamos x usando: x = (y - b) / m
     if pendiente == 0: 
@@ -123,8 +119,8 @@ def procesar_video(ruta_entrada, ruta_salida):
     print(f"Procesando {ruta_entrada} a {fps} FPS (Retraso: {retraso_ms}ms)...")
 
     while(captura.isOpened()):
-        ret, frame = captura.read()
-        if not ret:
+        check, frame = captura.read()
+        if not check:   
             break
         
         # 1. Copia del frame
@@ -133,19 +129,19 @@ def procesar_video(ruta_entrada, ruta_salida):
         # 2. Canny (Bordes)
         grises = cv2.cvtColor(imagen_carril, cv2.COLOR_BGR2GRAY)
         desenfoque = cv2.GaussianBlur(grises, (5, 5), 0)
-        imagen_canny = cv2.Canny(desenfoque, UMBRALES_CANNY[0], UMBRALES_CANNY[1])
+        imagen_canny = cv2.Canny(desenfoque, canny_umbrales[0], canny_umbrales[1])
         
         # 3. ROI (Región de Interés)
         img_recortada = region_interes(imagen_canny)
         
         # 4. Hough Transform
         lineas = cv2.HoughLinesP(img_recortada, 
-                                PARAMETROS_HOUGH["rho"], 
-                                PARAMETROS_HOUGH["theta"], 
-                                PARAMETROS_HOUGH["threshold"], 
+                                parametros_hough["rho"], 
+                                parametros_hough["theta"], 
+                                parametros_hough["threshold"], 
                                 np.array([]), 
-                                minLineLength=PARAMETROS_HOUGH["minLineLength"], 
-                                maxLineGap=PARAMETROS_HOUGH["maxLineGap"])
+                                minLineLength=parametros_hough["minLineLength"], 
+                                maxLineGap=parametros_hough["maxLineGap"])
         
         # 5. Promedio y Extrapolación
         linea_izq, linea_der = average_slope_intercept(imagen_carril, lineas)
